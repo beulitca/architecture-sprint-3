@@ -1,0 +1,19 @@
+@startuml
+title "Warm Hous" Context Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+System_Ext(gadgets, "Third-Party Gadgets", "Gadgets to change settings and make measurements")
+System_Ext(front, "WebSite,App", "Outsource Web site, App")
+System(smarthouse, "SmartHouse", "Smart home system")
+Person_Ext(client, "Client", "House owner")
+Person(enjeneer, "Enjeneer", "An enjeneer, that installs gadgets")
+Rel(client, front, "A client manages his house", "UI")
+Rel(enjeneer, smarthouse, "An enjeneer configures new installations", "HTTPS")
+Rel(front, smarthouse, "Frontend transmits client's commands to the system", "HTTPS")
+Rel(smarthouse, gadgets, "The System sends requests to the gadgets", "HTTPS")
+Rel(smarthouse, client, "The system sends notifications to the client", "SMTP,SMS...")
+
+@enduml

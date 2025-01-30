@@ -1,0 +1,74 @@
+@startuml
+title "Warm Hous" Container Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+AddRelTag("sync", $textColor=$ARROW_FONT_COLOR, $lineColor=$ARROW_COLOR, $lineStyle=DashedLine())
+AddElementTag("backendContainer", $fontColor=$ELEMENT_FONT_COLOR, $bgColor="#335DA5", $shape=EightSidedShape(), $legendText="backend container")
+UpdateElementStyle("System_Boundary", $bgColor="#EEEEEE", $fontColor=$COLOR_NEUTRAL, $borderColor="#335DA5", $sprite="robot", $legendText="system boundary")
+UpdateElementStyle("Container_Boundary", $bgColor="#AAAAAA", $fontColor=$COLOR_NEUTRAL, $borderColor="#335DA5", $sprite="robot", $legendText="system boundary")
+
+
+System_Ext(gadget, "Third-Party устройства управления умным домом", "Датчики и реле")
+System_Ext(front, "WebSite,App", "Outsource Сайт и мобильное приложение")
+System_Boundary(SmartHouse, "Smart House", $tags="system") {
+    ContainerDb(redis, "Кеш", "Redis",)
+    ContainerDb(gadgets_db, "Postgre", "Gadgets DB")
+    ContainerDb(users_db,  "БД пользователей", "Postgre",)
+    ContainerDb(identityserver_db, "Identityserver БД", "Postgre")
+    ContainerDb(smarthouse_db, "SmartHouse БД", "Postgre")
+    Container(notifications, "Уведомления", "Рассылка уведомлений", $tags="backendContainer")
+    Container(users, "Пользователи", "CRUD пользователей и их домов (пока у пользователя 1 дом)", $tags="backendContainer")
+    Container(gadgets, "Устройства", "Реализует шаблон Коллекция и CRUD операции с устройствами", $tags="backendContainer")
+    Container(gadgets_integration, "GadgetsIntegration", "Интерфейс взаимодействия с устройствами", $tags="backendContainer")
+    Container(smarthouse, "SmartHouse", "Оркестрация сценариев умного дома", $tags="backendContainer")
+    Container(apigateway, "ApiGateWay", "Проксирование входящих запросов от фронта, авторизация, аутентификаця, фильтрация трафика, тротлинг, безопасность", $tags="backendContainer")
+    Container(callback, "Callbacks", "Доставка асинхронного ответа фронту. Чтение внешнего фронта из очереди противоречит безопасности.", $tags="backendContainer")
+    System(identityserver, "IdentityServer", "IdentityServer или KeyClock проверка и генерация авторизационных токенов, управление сессией")
+    Container_Boundary(Kafka, "Kafka") {
+        ContainerQueue(topic_user_request, "topic", "Запросы с фронта")
+        ContainerQueue(topic_user_response, "topic", "Ответы фронту")
+        ContainerQueue(topic_users, "topic", "Пользователи")
+        ContainerQueue(topic_gadgets, "topic", "Устройства")
+        ContainerQueue(topics_orchestration_requests, "topics", "Топики для инициации выполнения команд оркестрации")
+        ContainerQueue(topics_orchestration_responses, "topics", "Топики для результатов выполнения команд оркестрации")
+        ContainerQueue(topic_notification, "topic", "Уведомления от всех модулей системы")
+    }
+    Person(support, "support", "Поддержка")
+}
+Person_Ext(client, "client", "Клиент")
+
+Rel(front, apigateway, "Обработка запросов пользователей", "HTTP")
+Rel(callback, front, "Вызов API фронта для передачи ответа", "HTTP")
+Rel(callback, topic_user_response, "Subscribe готовые ответы фронту", "HTTP")
+Rel(apigateway, topic_user_request, "Publish в очередь запросов с фронта")
+Rel(apigateway, topic_users, "Publish в очередь запросов на CRUD изменение пользователя")
+Rel(apigateway, topic_gadgets, "Publish в очередь запросов на CRUD изменение устройств")
+Rel(apigateway, identityserver, "Получение и проверка токенов пользователей", "HTTP", $tags="sync")
+Rel(users, identityserver, "Репликация пользователей", $tags="sync")
+Rel(smarthouse, topic_user_request, "Subscribe запросы с фронта")
+Rel(smarthouse, topics_orchestration_requests, "Publish в топики в рамках выполнения запроса пользователя")
+Rel(smarthouse, topics_orchestration_responses, "Subscribe результатов выполнения команд оркестрации")
+Rel(smarthouse, topic_user_response, "Publish гтового ответа фронту")
+Rel(users, topic_users, "Subscribe CRUD запросов по пользователям")
+Rel(gadgets, topic_gadgets, "Subscribe CRUD запросов по устройствам")
+Rel(client, front, "Работа в UI")
+Rel(gadgets_integration, topics_orchestration_requests, "Subscribe команды для отправки на устройства")
+Rel(gadgets_integration, gadget, "Синхронное взаимодействие с устройствами по доступным им протоколам",$tags="sync")
+Rel(gadgets_integration, redis, "Запись, чтение кеша данных устройства", $tags="sync")
+Rel(gadgets_integration, topics_orchestration_responses, "Publish результатов отправки команды устройству")
+Rel(smarthouse, redis, "Считывание данных устройства по событию в топике topics_orchestration_responses",$tags="sync")
+Rel(notifications, topic_notification, "Subscribe уведомления, опубликованные любым модулем системы")
+Rel(notifications, topic_notification, "Subscribe уведомления, опубликованные любым модулем системы")
+Rel(users, users_db, "Чтение и запись",$tags="sync")
+Rel(gadgets, gadgets_db, "Чтение и запись",$tags="sync")
+Rel(smarthouse, smarthouse_db, "Чтение и запись",$tags="sync")
+Rel(identityserver, identityserver_db, "Чтение и запись",$tags="sync")
+Rel(notifications, client, "Доставка уведомлений")
+Rel(notifications, support, "Доставка уведомлений")
+
+SHOW_LEGEND()
+
+@enduml

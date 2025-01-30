@@ -1,0 +1,36 @@
+@startuml
+title SmartHouse Gadget Repository Code Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+class Gadget {
+  +GUID id
+  +String name
+  +Int status
+  +Int type
+  +GUID User
+  +GUID EditWho
+  +DateTime EditWhen
+  +void getGadget()
+  +void createGadget()
+  +void updateGadget()
+  +void deleteGadget()
+}
+
+struct Status {
+  +Int Id
+  +String Name
+}
+
+struct Type {
+  +Int Id
+  +String Name
+}
+
+
+Type "1" -- "0..*" Gadget : has
+Status "1" -- "0..*" Gadget : has
+
+@enduml

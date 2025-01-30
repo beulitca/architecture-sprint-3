@@ -1,0 +1,28 @@
+@startuml
+title "gadgets_db" ER-Diagram
+
+entity "Gadget" as gadget {
+  * id : UUID
+  * status : Int
+  * name : String 
+  * type : Int
+  * user_id : UUID
+  * editWho : user_id
+  * editWhen : datetime
+}
+
+entity "Type" as type {
+  * id : Int
+  * name : String
+}
+
+entity "Status" as status {
+  * id : Int
+  * name : String
+}
+
+
+type --o{ gadget 
+status --o{ gadget 
+
+@enduml
