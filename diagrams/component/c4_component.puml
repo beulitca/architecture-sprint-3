@@ -1,0 +1,70 @@
+@startuml
+title Gadgets Component Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(GudgetsContainer, "Gudgets Container") {
+    Container(gadgets, "Gadgets Backend Service", "C#, EntityFramework", "Реализует шаблон Коллекция и CRUD операции с устройствами"){
+        Component(CRUDAdapter, "CRUDAdapter", "Слушает сообщения в топике topic_gadgets на CRUD операции с устройством")
+        Component(UserUpdateAdapter, "UserUpdateAdapter", "Слушает сообщения в топике topic_user_update об изменениях данных клиентов")
+        Component(GudgetsIntegrationAdapter, "GudgetsIntegrationAdapter" ,"Слушает сообщения в топике topic_notification о доступности устройств")
+        Component(GudgetUpdateAdapter, "GudgetUpdateAdapter", "Публикует событие в топик opic_gadget_update об обновлении данных устройства")
+        Component(GudgetNotificationAdapter, "GudgetNotificationAdapter", "Публикует уведомления об устройстве в топик topic_notification")
+        Component(OrchestrationRequestsAdapter, "OrchestrationRequestsAdapter", "Слушает сообщения в топиках topics_orchestration_requests о предоставлении данных клиенту")
+        Component(OrchestrationResponseAdapter, "OrchestrationResponseAdapter", "Публикует сообщения с запрошенными клиентом данными в топики topics_orchestration_responses")
+
+        Component(AuthService, "AuthService", "Проверяет по авторизационному токену, что устройство принадлежит пользователю")
+        Component(GadgetRepository, "GadgetRepository",  "Возвращает данные устройства")
+    
+
+        Component(CRUDHandler, "CRUDHandler", "Реализует CRUD операции с устройством")
+        Component(UserUpdateHandler, "UserUpdateHandler", "Меняет статус/удаляет устройство, если пользователь заблокирован/удален")
+        Component(GudgetsIntegrationHandler, "GudgetsIntegrationHandler", "Менет статус устройства")
+        Component(OrchestrationRequestsHandler, "OrchestrationRequestsHandler", "Реализует обработку пользовательских запросов")
+
+
+    }   
+    ContainerDb(gadgets_db, "Gadgets DB", "Postgre")
+}
+ Container_Boundary(Kafka, "Kafka") {
+        ContainerQueue(topic_user_update, "topic", "Событие изменения данных пользователя")
+        ContainerQueue(topic_gadgets, "topic", "Устройства")
+        ContainerQueue(topic_notification, "topic", "Уведомления от всех модулей системы")
+        ContainerQueue(topic_gadget_update, "topic", "Событие изменения данных устройства")
+        ContainerQueue(topics_orchestration_requests, "topics", "Топики для инициации выполнения команд оркестрации")
+        ContainerQueue(topics_orchestration_responses, "topics", "Топики для результатов выполнения команд оркестрации")
+ }
+
+Rel(CRUDAdapter, topic_gadgets, "Слушает CRUD запросы по устройствам")
+Rel(CRUDAdapter, CRUDHandler, "Передает запрос в обработку")
+Rel(CRUDHandler, AuthService, "Проверяет права пользователя на устройство")
+Rel(CRUDHandler, GadgetRepository, "Направляет запросы к БД")
+Rel(CRUDHandler, GudgetUpdateAdapter, "Создание события обновления устройства")
+Rel(GudgetUpdateAdapter, topic_gadget_update, "Публикация события")
+
+Rel(UserUpdateAdapter, topic_user_update, "Слушает события обновления пользователя")
+Rel(UserUpdateAdapter, UserUpdateHandler, "Передает запрос в обработку")
+Rel(UserUpdateHandler, AuthService, "Проверяет права пользователя на устройства")
+Rel(UserUpdateHandler, GadgetRepository, "Меняет статус/удаляет устройство, если пользователь заблокирован/удален")
+Rel(UserUpdateHandler, GudgetUpdateAdapter, "Создание события обновления устройства")
+Rel(GadgetRepository, gadgets_db, "Выполнение запросов к БД")
+
+Rel(GudgetsIntegrationAdapter, topic_notification, "Слушает ошики обращения к устройству")
+Rel(GudgetsIntegrationAdapter, GudgetsIntegrationHandler, "Передает запрос в обработку")
+Rel(GudgetsIntegrationHandler, AuthService, "Проверяет права пользователя на устройства")
+Rel(GudgetsIntegrationHandler, GadgetRepository, "Менет статус устройства")
+Rel(GudgetsIntegrationHandler, GudgetUpdateAdapter, "Создание события обновления устройства")
+
+Rel(OrchestrationRequestsAdapter, topics_orchestration_requests, "Слушает запросы данных об устройстве")
+Rel(OrchestrationRequestsAdapter, OrchestrationRequestsHandler, "Передает запрос в обработку")
+Rel(OrchestrationRequestsHandler, AuthService, "Проверяет права пользователя на устройства")
+Rel(OrchestrationRequestsHandler, GadgetRepository, "Реализует обработку пользовательских запросов")
+Rel(OrchestrationRequestsHandler, OrchestrationResponseAdapter, "Создание сообщения в очередь")
+Rel(OrchestrationResponseAdapter, topics_orchestration_responses, "Публикация сообщения")
+
+Rel(gadgets, GudgetNotificationAdapter, "Формирование уведомления")
+Rel(GudgetNotificationAdapter, topic_notification, "Публикация уведомления")
+
+@enduml

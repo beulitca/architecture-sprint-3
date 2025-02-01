@@ -1,0 +1,108 @@
+@startuml
+title "gadgets_db" ER-Diagram
+
+entity "Gadget" as gadget {
+  * id : UUID
+  * status : Int
+  * name : String 
+  * type : Int
+  * user_id : UUID
+}
+
+entity "GadgetType" as gadget_type {
+  * id : Int
+  * name : String
+}
+
+entity "Status" as status {
+  * id : Int
+  * name : String
+}
+
+entity "Group" as group {
+  * id : Int
+  * name : String 
+  * access_type: Int
+}
+
+entity "Users" as users {
+  * id : UUID
+  * name : String 
+  * surname: String
+  * patronymic: String
+  * group : UUID  
+}
+
+entity "GroupUser" as groupuser {
+  * id: bigint
+  * user_id: UUID
+  * group_id: Int
+}
+
+entity "House" as house {
+  * Address : String 
+  * RegisteredWhen: DateTime
+}
+
+
+entity "Tempreture" as tempreture{
+  * id: bigint
+  * datetime: datetime
+  * value: decimal
+  * gadget_id: UUID
+}
+
+entity "Video" as video{
+  * id: bigint
+  * date: date
+  * filereference: string
+}
+
+entity "Notification" as notification{
+  * id: bigint
+  * protocol: String
+  * sentwhen: Datetime
+  * gadget_id: UUID
+  * source: string
+  * Message: Text
+}
+
+
+entity "HouseScenario" as house_scenario{
+  * id: Int
+  * group: group_id
+  * description: String
+  * type: Int
+  * user_id: UUID
+}
+
+
+entity "Step" as step {
+  * id: UUID
+  * action_type_id: Int
+  * Order: Int
+}
+
+entity "ActionType" as action_type {
+  * id: Int
+  * description: String
+  * gadget_type_id: Int
+}
+
+
+gadget_type ||--o{ gadget 
+status ||--o{ gadget 
+house |o--* users
+users ||--o{ groupuser
+group ||--o{ groupuser
+house ||--o{ gadget 
+tempreture }o--|| gadget
+video }o--|| gadget
+house_scenario ||--|{ step
+step }o--|| action_type
+gadget_type ||--o| action_type
+notification }o--o| gadget
+
+
+
+@enduml

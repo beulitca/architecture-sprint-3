@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+
+skinparam actorStyle awesome
+actor Client as c
+actor Engeneer as e
+
+usecase "Change Heat" as uc1
+usecase "On/Off Heat" as uc2
+usecase "View Tempreture" as uc3
+usecase "Register gatgets " as uc4
+usecase "Get data from gatgets" as uc5
+
+c --> uc1
+c --> uc2
+c --> uc3
+e --> uc4
+
+uc1 .> uc5: include
+uc2 .> uc5: include
+uc3 .> uc5: include
+@enduml
